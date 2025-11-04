@@ -23,7 +23,10 @@ pipeline {
 
   stages {
     stage('Checkout') {
-      steps { checkout scm }
+      steps { 
+        deleteDir()     // <-- wipes the workspace safely
+        checkout scm    // lets Multibranch/Git config do the right thing
+       }
     }
 
     stage('System deps (fast)') {
