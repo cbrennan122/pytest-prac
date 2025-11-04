@@ -1,12 +1,10 @@
 # pytest: enable fixture injection
-import os
 import json
 import pytest
 from pytest_mock import MockType, MockerFixture
-from unittest.mock import MagicMock
 import requests
 
-from api_client import ApiClient, APIError, APIError, AuthError
+from api_client import ApiClient, APIError, AuthError
 
 @pytest.fixture(autouse=True)
 def env(monkeypatch):

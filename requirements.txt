@@ -3,3 +3,4 @@ pytest-cov
 requests
 pytest-html
 pytest-mock
+pytest-pythonpath
