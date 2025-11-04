@@ -1,9 +1,13 @@
 pipeline {
-  agent any
+  agent {
+    docker {
+      image 'python:3.11-slim'
+      args '-u 0:0' // run as root to apt-get if needed
+    }
+  }
 
   options {
     timestamps()
-    ansiColor('xterm')
     buildDiscarder(logRotator(numToKeepStr: '20'))
     disableConcurrentBuilds()
   }
@@ -14,6 +18,7 @@ pipeline {
 
   environment {
     PY_COLORS = '1'
+    REPORT_DIR = 'reports'
   }
 
   stages {
@@ -21,27 +26,53 @@ pipeline {
       steps { checkout scm }
     }
 
+    stage('System deps (fast)') {
+      steps {
+        ansiColor('xterm') {
+          sh '''
+            set -euxo pipefail
+            apt-get update -y
+            apt-get install -y --no-install-recommends git
+            rm -rf /var/lib/apt/lists/*
+          '''
+        }
+      }
+    }
+
     stage('Setup venv & deps') {
       steps {
-        sh '''
-          python -m venv .venv
-          . .venv/bin/activate
-          python -m pip install --upgrade pip
-          pip install -r requirements-dev.txt
-        '''
+        ansiColor('xterm') {
+          sh '''
+            set -euxo pipefail
+            python -m venv .venv
+            . .venv/bin/activate
+            python -m pip install --upgrade pip wheel
+            if [ -f requirements-dev.txt ]; then
+              pip install -r requirements-dev.txt
+            fi
+          '''
+        }
       }
     }
 
     stage('Test') {
       steps {
-        // Retry the test stage once if it’s flaky
         retry(1) {
-          sh """
-            . .venv/bin/activate
-            EXTRA_ARGS=''
-            if [ "${RUN_SLOW_TESTS}" = "true" ]; then EXTRA_ARGS='-m slow'; fi
-            python tools/ci_run.py --report-dir reports --extra -vv \$EXTRA_ARGS
-          """
+          ansiColor('xterm') {
+            sh '''
+              set -euxo pipefail
+              . .venv/bin/activate
+              mkdir -p "$REPORT_DIR"
+
+              EXTRA_ARGS=""
+              if [ "${RUN_SLOW_TESTS}" = "true" ]; then
+                EXTRA_ARGS="-m slow"
+              fi
+
+              # Your runner should write reports/junit.xml and reports/report.html
+              python tools/ci_run.py --report-dir "$REPORT_DIR" --extra -vv ${EXTRA_ARGS}
+            '''
+          }
         }
       }
       post {
