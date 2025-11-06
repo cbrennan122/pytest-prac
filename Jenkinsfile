@@ -8,6 +8,7 @@ pipeline {
 
   options {
     timestamps()
+    skipDefaultCheckout()                 
     buildDiscarder(logRotator(numToKeepStr: '20'))
     disableConcurrentBuilds()
   }
@@ -26,9 +27,9 @@ pipeline {
       steps { 
         deleteDir()
         checkout([$class: 'GitSCM',
-        branches: [[name: '*/main']],
-        userRemoteConfigs: [[url: 'https://github.com/cbrennan122/pytest-prac.git']],
-        extensions: [[$class: 'CloneOption', noTags: true, shallow: false, depth: 0]]
+          branches: [[name: '*/main']],
+          userRemoteConfigs: [[url: 'https://github.com/cbrennan122/pytest-prac.git']],
+          extensions: [[$class: 'CloneOption', noTags: true, shallow: false, depth: 0]]
         ])
        }
     }
