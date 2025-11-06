@@ -24,8 +24,12 @@ pipeline {
   stages {
     stage('Checkout') {
       steps { 
-        deleteDir()     // <-- wipes the workspace safely
-        checkout scm    // lets Multibranch/Git config do the right thing
+        deleteDir()
+        checkout([$class: 'GitSCM',
+        branches: [[name: '*/main']],
+        userRemoteConfigs: [[url: 'https://github.com/cbrennan122/pytest-prac.git']],
+        extensions: [[$class: 'CloneOption', noTags: true, shallow: false, depth: 0]]
+        ])
        }
     }
 
